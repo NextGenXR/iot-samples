@@ -57,7 +57,7 @@ def initialize_device_prim(live_layer, iot_topic):
     for attrib in iot_spec.attributes:
         iot_spec.RemoveProperty(attrib)
 
-    IOT_TOPIC_DATA = f"{CONTENT_DIR}/{iot_topic}_iot_data.csv"
+    IOT_TOPIC_DATA = os.path.join(CONTENT_DIR, f"{iot_topic}_iot_data.csv")
     data = pd.read_csv(IOT_TOPIC_DATA)
     data.head()
 
@@ -89,7 +89,7 @@ def create_live_layer(iot_topic):
 
 async def initialize_async(iot_topic):
     # copy a the Conveyor Belt to the target nucleus server
-    LOCAL_URL = f"file:{CONTENT_DIR}/ConveyorBelt_{iot_topic}.usd"
+    LOCAL_URL = os.path.join("file:", CONTENT_DIR, f"ConveyorBelt_{iot_topic}.usd")
     STAGE_URL = f"{BASE_URL}/ConveyorBelt_{iot_topic}.usd"
     LIVE_URL = f"{BASE_URL}/{iot_topic}.live"
     result = await omni.client.copy_async(
@@ -143,7 +143,7 @@ def write_to_live(live_layer, iot_topic, group, ts):
 
 def run(stage, live_layer, iot_topic):
     # we assume that the file contains the data for single device
-    IOT_TOPIC_DATA = f"{CONTENT_DIR}/{iot_topic}_iot_data.csv"
+    IOT_TOPIC_DATA = os.path.join(CONTENT_DIR, f"{iot_topic}_iot_data.csv")
     data = pd.read_csv(IOT_TOPIC_DATA)
     data.head()
 
