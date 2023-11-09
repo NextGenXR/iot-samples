@@ -21,3 +21,4 @@ PACKAGE-DEPS.yaml
 /app
 *.env
 *.code-workspace
+run_csv.bat
