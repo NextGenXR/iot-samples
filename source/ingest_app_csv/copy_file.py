@@ -67,7 +67,9 @@ async def copy_file(local_file_path, server_file_path, nucleus_server_path):
 
     # if not await path_exists(server_file_path):
     copy_status = await omni.client.copy_async(
-        filespec, server_file_path, omni.client.CopyBehavior.OVERWRITE)
+        filespec, server_file_path,
+        behavior=omni.client.CopyBehavior.OVERWRITE,
+        message="Copy Conveyor Belt")
     if copy_status == omni.client.Result.OK:
         print(f"File {server_file_path} copied successfully!")
     else:
@@ -79,7 +81,8 @@ async def main():
     local_file = 'ConveyorBelt_A08_PR_NVD_01.usd'
     local_folder = 'G:\\GitLab\\iot-samples\\content'
     local_file_path = os.path.join(local_folder, local_file)
-    nucleus_server = 'omniverse://localhost'
+    # nucleus_server = 'omniverse://localhost'
+    nucleus_server = 'omniverse://simready.ov.nvidia.com'
     server_path = 'Projects/IoT/Samples/HeadlessApp/'
     nucleus_server_path = f'{nucleus_server}/{server_path}'
     server_file_path = f'{nucleus_server_path}{local_file}'
