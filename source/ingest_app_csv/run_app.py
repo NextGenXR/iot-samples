@@ -14,7 +14,7 @@ from pathlib import Path
 PLATFORM_SYSTEM = platform.system().lower()
 PLATFORM_MACHINE = platform.machine()
 
-if PLATFORM_MACHINE == "i686" or PLATFORM_MACHINE == "AMD64":
+if PLATFORM_MACHINE in ["i686", "AMD64"]:
     PLATFORM_MACHINE = "x86_64"
 
 CURRENT_PLATFORM = f"{PLATFORM_SYSTEM}-{PLATFORM_MACHINE}"
@@ -37,7 +37,8 @@ USD_LIB_DIR = DEPS_DIR.joinpath("usd", args.config, "lib")
 CLIENT_LIB_DIR = DEPS_DIR.joinpath("omni_client_library", args.config)
 RESOLVER_DIR = DEPS_DIR.joinpath("omni_usd_resolver", args.config)
 
-EXTRA_PATHS = [str(CLIENT_LIB_DIR), str(USD_BIN_DIR), str(USD_LIB_DIR), str(BUILD_DIR), str(RESOLVER_DIR)]
+EXTRA_PATHS = [str(CLIENT_LIB_DIR), str(USD_BIN_DIR), str(USD_LIB_DIR),
+               str(BUILD_DIR), str(RESOLVER_DIR)]
 EXTRA_PYTHON_PATHS = [
     str(USD_LIB_DIR.joinpath("python")),
     str(CLIENT_LIB_DIR.joinpath("bindings-python")),
