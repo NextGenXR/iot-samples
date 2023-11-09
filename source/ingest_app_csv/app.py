@@ -124,17 +124,27 @@ async def initialize_async(iot_topic):
     Returns:
         Tuple[Usd.Stage, Sdf.Layer]: A tuple containing the initialized USD stage and the live layer.
     """
+
+    await check_connection()
+
     # copy a the Conveyor Belt to the target nucleus server
-    LOCAL_URL = os.path.join("file:", CONTENT_DIR, f"ConveyorBelt_{iot_topic}.usd")
+    LOCAL_URL = f"file:{CONTENT_DIR}\\ConveyorBelt_{iot_topic}.usd"
     STAGE_URL = f"{BASE_URL}/ConveyorBelt_{iot_topic}.usd"
     LIVE_URL = f"{BASE_URL}/{iot_topic}.live"
+    print(f'Copying {LOCAL_URL} to {STAGE_URL}...')
     result = await omni.client.copy_async(
         LOCAL_URL,
         STAGE_URL,
-        behavior=omni.client.CopyBehavior.ERROR_IF_EXISTS,
+        behavior=omni.client.CopyBehavior.OVERWRITE,
         message="Copy Conveyor Belt",
     )
 
+    if result is omni.client.Result.OK:
+        print(f"\tCopying succeeded.")
+    else:
+        print(f'\tCopying failed. Status: {result}')
+
+    print(f'Opening {STAGE_URL}...')
     stage = Usd.Stage.Open(STAGE_URL)
     if not stage:
         raise Exception(f"Could load the stage {STAGE_URL}.")
@@ -201,6 +211,7 @@ def run(stage, live_layer, iot_topic):
         iot_topic (str): The name of the IoT topic to read data from.
     """
     IOT_TOPIC_DATA = os.path.join(CONTENT_DIR, f"{iot_topic}_iot_data.csv")
+    print(f"IoT Data file is: {IOT_TOPIC_DATA}")
     data = pd.read_csv(IOT_TOPIC_DATA)
     data.head()
 
@@ -221,18 +232,34 @@ def run(stage, live_layer, iot_topic):
         write_to_live(live_layer, iot_topic, group, (next_time - start_time).total_seconds())
         last_time = next_time
 
+async def check_connection():
+    server_url = f'omniverse://{OMNI_HOST}'
+    print(f'Checking host URL = {server_url}')
+    status, response = omni.client.stat(server_url)
+    if status is not omni.client.Result.OK:
+        print(f"Failed to connect to {server_url}.")
+        # exit(1)
+    else:
+        print(f"Successfully connected to {server_url}.")
+
 
 if __name__ == "__main__":
     IOT_TOPIC = "A08_PR_NVD_01"
-    omni.client.initialize()
+
+    result = omni.client.initialize()
+    if not result:
+        print("Failed to initialize the client library.")
+        exit(1)
+
     omni.client.set_log_level(omni.client.LogLevel.DEBUG)
     omni.client.set_log_callback(log_handler)
     try:
         stage, live_layer = asyncio.run(initialize_async(IOT_TOPIC))
         run(stage, live_layer, IOT_TOPIC)
-    except:
-        print('---- LOG MESSAGES ---')
-        print(*messages, sep='\n')
+    except Exception as e:
+        print(f'Exception occurred: {e}')
+        print('\n---- LOG MESSAGES ---')
+        # print(*messages, sep='\n')
         print('----')
     finally:
         omni.client.shutdown()
