@@ -140,7 +140,7 @@ async def initialize_async(iot_topic):
     )
 
     if result is omni.client.Result.OK:
-        print(f"\tCopying succeeded.")
+        print("\tCopying succeeded.")
     else:
         print(f'\tCopying failed. Status: {result}')
 
@@ -259,7 +259,7 @@ if __name__ == "__main__":
     except Exception as e:
         print(f'Exception occurred: {e}')
         print('\n---- LOG MESSAGES ---')
-        # print(*messages, sep='\n')
+        print(*messages, sep='\n')
         print('----')
     finally:
         omni.client.shutdown()
