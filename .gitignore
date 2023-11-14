@@ -21,4 +21,6 @@ PACKAGE-DEPS.yaml
 /app
 *.env
 *.code-workspace
-run_csv.bat
+csv.bat
+mqtt.bat
+geom.bat
