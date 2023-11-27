@@ -24,13 +24,17 @@
 import asyncio
 import os
 import omni.client
-from pxr import Usd, Sdf
+from pxr import Usd, Sdf, Gf
 from pathlib import Path
 import pandas as pd
 import time
+from omni.live import LiveEditSession, LiveCube
 
 OMNI_HOST = os.environ.get("OMNI_HOST", "localhost")
-BASE_URL = "omniverse://" + OMNI_HOST + "/Projects/IoT/Samples/HeadlessApp"
+OMNI_USER = os.environ.get("OMNI_USER", "ov")
+if OMNI_USER.lower() == "omniverse":
+    OMNI_USER = "ov"
+BASE_FOLDER = "omniverse://" + OMNI_HOST + "/Users/" + OMNI_USER + "/iot-samples"
 SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 CONTENT_DIR = Path(SCRIPT_DIR).resolve().parents[1].joinpath("content")
 
@@ -84,28 +88,6 @@ def initialize_device_prim(live_layer, iot_topic):
         if not attr:
             raise Exception(f"Could not define the attribute: {attrName}")
 
-
-def create_live_layer(iot_topic):
-    """
-    Creates a new live layer for the given IoT topic.
-
-    Args:
-        iot_topic (str): The name of the IoT topic.
-
-    Returns:
-        Sdf.Layer: The newly created live layer.
-    """
-    LIVE_URL = f"{BASE_URL}/{iot_topic}.live"
-
-    live_layer = Sdf.Layer.CreateNew(LIVE_URL)
-    if not live_layer:
-        raise Exception(f"Could load the live layer {LIVE_URL}.")
-
-    Sdf.PrimSpec(live_layer, "iot", Sdf.SpecifierDef, "IoT Root")
-    live_layer.Save()
-    return live_layer
-
-
 async def initialize_async(iot_topic):
     """
     Initializes the USD stage for the given IoT topic by:
@@ -128,45 +110,35 @@ async def initialize_async(iot_topic):
     await check_connection()
 
     # copy a the Conveyor Belt to the target nucleus server
-    LOCAL_URL = f"file:{CONTENT_DIR}\\ConveyorBelt_{iot_topic}.usd"
-    STAGE_URL = f"{BASE_URL}/ConveyorBelt_{iot_topic}.usd"
-    LIVE_URL = f"{BASE_URL}/{iot_topic}.live"
-    print(f'Copying {LOCAL_URL} to {STAGE_URL}...')
+    stage_name = f"ConveyorBelt_{iot_topic}"
+    local_folder = f"file:{CONTENT_DIR}/{stage_name}"
+    stage_folder = f"{BASE_FOLDER}/{stage_name}"
+    stage_url = f"{stage_folder}/{stage_name}.usd"
     result = await omni.client.copy_async(
-        LOCAL_URL,
-        STAGE_URL,
-        behavior=omni.client.CopyBehavior.OVERWRITE,
+        local_folder,
+        stage_folder,
+        behavior=omni.client.CopyBehavior.ERROR_IF_EXISTS,
         message="Copy Conveyor Belt",
     )
 
-    if result is omni.client.Result.OK:
-        print("\tCopying succeeded.")
-    else:
-        print(f'\tCopying failed. Status: {result}')
-
-    print(f'Opening {STAGE_URL}...')
-    stage = Usd.Stage.Open(STAGE_URL)
+    stage = Usd.Stage.Open(stage_url)
     if not stage:
-        raise Exception(f"Could load the stage {STAGE_URL}.")
+        raise Exception(f"Could load the stage {stage_url}.")
 
-    root_layer = stage.GetRootLayer()
-    live_layer = Sdf.Layer.FindOrOpen(LIVE_URL)
-    if not live_layer:
-        live_layer = create_live_layer(iot_topic)
+    live_session = LiveEditSession(stage_url)
+    live_layer = await live_session.ensure_exists()
 
-    found = False
-    subLayerPaths = root_layer.subLayerPaths
-    for subLayerPath in subLayerPaths:
-        if subLayerPath == live_layer.identifier:
-            found = True
-
-    if not found:
-        root_layer.subLayerPaths.append(live_layer.identifier)
-        root_layer.Save()
+    session_layer = stage.GetSessionLayer()
+    session_layer.subLayerPaths.append(live_layer.identifier)
 
     # set the live layer as the edit target
     stage.SetEditTarget(live_layer)
     initialize_device_prim(live_layer, iot_topic)
+
+    # place the cube on the conveyor
+    live_cube = LiveCube(stage)
+    live_cube.scale(Gf.Vec3f(0.5))
+    live_cube.translate(Gf.Vec3f(100.0, -30.0, 195.0))
     omni.client.live_process()
     return stage, live_layer
 
@@ -256,10 +228,9 @@ if __name__ == "__main__":
     try:
         stage, live_layer = asyncio.run(initialize_async(IOT_TOPIC))
         run(stage, live_layer, IOT_TOPIC)
-    except Exception as e:
-        print(f'Exception occurred: {e}')
-        print('\n---- LOG MESSAGES ---')
-        print(*messages, sep='\n')
-        print('----')
+    except:
+        print("---- LOG MESSAGES ---")
+        print(*messages, sep="\n")
+        print("----")
     finally:
         omni.client.shutdown()
