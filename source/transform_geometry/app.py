@@ -114,7 +114,6 @@ def log_handler(thread, component, level, message):
 
 
 async def initialize_async():
-    # copy a the Conveyor Belt to the target nucleus server
     IOT_TOPIC = "Dancing_Cubes"
     STAGE_URL = f"{BASE_URL}/{IOT_TOPIC}.usd"
     LIVE_URL = f"{BASE_URL}/{IOT_TOPIC}.live"
@@ -125,7 +124,7 @@ async def initialize_async():
         stage = Usd.Stage.CreateNew(STAGE_URL)
 
     if not stage:
-        raise Exception(f"Could load the stage {STAGE_URL}.")
+        raise Exception(f"Could not load the stage {STAGE_URL}.")
 
     root_layer = stage.GetRootLayer()
     live_layer = Sdf.Layer.FindOrOpen(LIVE_URL)
@@ -133,7 +132,7 @@ async def initialize_async():
         live_layer = Sdf.Layer.CreateNew(LIVE_URL)
 
     if not live_layer:
-        raise Exception(f"Could load the live layer {LIVE_URL}.")
+        raise Exception(f"Could not load the live layer {LIVE_URL}.")
 
     found = False
     subLayerPaths = root_layer.subLayerPaths
