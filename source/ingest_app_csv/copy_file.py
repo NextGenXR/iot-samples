@@ -1,6 +1,6 @@
-import omni.client
-import asyncio
 import os
+import asyncio
+import omni.client
 
 
 async def connect_to_nucleus(login_url):
