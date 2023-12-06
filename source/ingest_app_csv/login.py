@@ -1,7 +1,7 @@
 import omni.client
 
-server_url = "omniverse://simready.ov.nvidia.com"
-# server_url = "omniverse://localhost"
+# server_url = "omniverse://simready.ov.nvidia.com"
+server_url = "omniverse://localhost"
 
 # Attempt to access a resource on the server
 status, response = omni.client.stat(server_url)
