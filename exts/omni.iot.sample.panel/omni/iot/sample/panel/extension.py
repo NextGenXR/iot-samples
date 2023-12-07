@@ -49,19 +49,42 @@ class uiButtonStyles:
 
 class LiveCube:
     def __init__(self, stage: Usd.Stage, path: str):
-        self._prim = stage.GetPrimAtPath(path)
-        self._op = self._prim.HasProperty(TRANSLATE_OFFSET)
-        if self._prim:
-            self._xform = UsdGeom.Xformable(self._prim)
+            """
+            Initializes an instance of the Extension class.
+
+            Args:
+                stage (Usd.Stage): The USD stage.
+                path (str): The path to the prim in the USD stage.
+            """
+            self._prim = stage.GetPrimAtPath(path)
+            self._op = self._prim.HasProperty(TRANSLATE_OFFSET)
+            if self._prim:
+                self._xform = UsdGeom.Xformable(self._prim)
 
     def resume(self):
-        if self._xform and not self._op:
-            op = self._xform.AddTranslateOp(opSuffix="offset")
-            op.Set(time=1, value=(0, -20.0, 0))
-            op.Set(time=192, value=(0, -440, 0))
-            self._op = True
+            """
+            Resumes the operation of the panel.
+
+            If the panel has a transform and is not currently in operation,
+            this method adds a translate operation to the transform and sets
+            the time and value parameters for the operation.
+
+            Parameters:
+                None
+
+            Returns:
+                None
+            """
+            if self._xform and not self._op:
+                op = self._xform.AddTranslateOp(opSuffix="offset")
+                op.Set(time=1, value=(0, -20.0, 0))
+                op.Set(time=192, value=(0, -440, 0))
+                self._op = True
 
     def pause(self):
+        """
+        Pauses the operation by removing the translate offset property and resetting the transform operation order.
+        """
         if self._xform and self._op:
             default_ops = []
             for op in self._xform.GetOrderedXformOps():
@@ -73,13 +96,42 @@ class LiveCube:
 
 
 class LiveRoller:
+    """
+    Represents a live roller object that can be resumed or paused.
+
+    Args:
+        stage (Usd.Stage): The USD stage object.
+        path (str): The path to the roller object in the stage.
+
+    Attributes:
+        _prim (Usd.Prim): The USD prim object representing the roller.
+        _op (bool): Flag indicating whether the roller has the rotate spin property.
+        _xform (UsdGeom.Xformable): The USD xformable object representing the roller's transform.
+
+    Methods:
+        resume(): Resumes the rotation of the roller.
+        pause(): Pauses the rotation of the roller.
+    """
+
     def __init__(self, stage: Usd.Stage, path: str):
+        """
+        Initializes a new instance of the Extension class.
+
+        Args:
+            stage (Usd.Stage): The USD stage.
+            path (str): The path to the prim in the USD stage.
+        """
         self._prim = stage.GetPrimAtPath(path)
         self._op = self._prim.HasProperty(ROTATE_SPIN)
         if self._prim:
             self._xform = UsdGeom.Xformable(self._prim)
 
     def resume(self):
+        """
+        Resumes the rotation of the roller by adding a rotateX operation.
+
+        If the roller already has a rotate spin operation, this method does nothing.
+        """
         if self._xform and not self._op:
             op = self._xform.AddRotateXOp(opSuffix="spin")
             op.Set(time=1, value=0)
@@ -87,6 +139,11 @@ class LiveRoller:
             self._op = True
 
     def pause(self):
+        """
+        Pauses the rotation of the roller by removing the rotate spin operation.
+
+        If the roller does not have a rotate spin operation, this method does nothing.
+        """
         if self._xform and self._op:
             default_ops = []
             for op in self._xform.GetOrderedXformOps():
@@ -134,19 +191,31 @@ class OmniIotSamplePanelExtension(omni.ext.IExt):
         print("[omni.iot.sample.panel] shutdown")
 
     def _on_velocity_changed(self, speed):
-        print(f"[omni.iot.sample.panel] _on_velocity_changed: {speed}")
-        if speed is not None and speed > 0.0:
-            with Sdf.ChangeBlock():
-                self._cube.resume()
-                for roller in self._rollers:
-                    roller.resume()
-        else:
-            with Sdf.ChangeBlock():
-                self._cube.pause()
-                for roller in self._rollers:
-                    roller.pause()
+            """
+            Callback function triggered when the velocity is changed.
+
+            Args:
+                speed (float): The new velocity value.
+
+            Returns:
+                None
+            """
+            print(f"[omni.iot.sample.panel] _on_velocity_changed: {speed}")
+            if speed is not None and speed > 0.0:
+                with Sdf.ChangeBlock():
+                    self._cube.resume()
+                    for roller in self._rollers:
+                        roller.resume()
+            else:
+                with Sdf.ChangeBlock():
+                    self._cube.pause()
+                    for roller in self._rollers:
+                        roller.pause()
 
     def _update_frame(self):
+        """
+        Updates the frame of the panel with the selected primitive's properties.
+        """
         if self._selected_prim is not None:
             self._property_stack.clear()
             properties = self._selected_prim.GetProperties()
@@ -173,6 +242,14 @@ class OmniIotSamplePanelExtension(omni.ext.IExt):
                     ui.Button("", style=uiButtonStyles.mainButton)
 
     def _on_selected_prim_changed(self):
+        """
+        Handle the event when the selected primitive is changed.
+
+        This method retrieves the selected primitive and its path from the USD context.
+        It then checks if the selected path is valid and belongs to the '/iot' prim.
+        If the conditions are met, it updates the selected primitive, updates the label,
+        and updates the frame accordingly.
+        """
         print("[omni.iot.sample.panel] _on_selected_prim_changed")
         selected_prim = self._usd_context.get_selection()
         selected_paths = selected_prim.get_selected_prim_paths()
@@ -191,6 +268,9 @@ class OmniIotSamplePanelExtension(omni.ext.IExt):
 
     # ===================== stage events START =======================
     def _on_selection_changed(self):
+        """
+        Handle the event when the selection is changed.
+        """
         print("[omni.iot.sample.panel] _on_selection_changed")
         if self._iot_prim:
             self._on_selected_prim_changed()
@@ -205,6 +285,16 @@ class OmniIotSamplePanelExtension(omni.ext.IExt):
             self._on_asset_opened()
 
     def _on_objects_changed(self, notice, stage):
+        """
+        Handle the event when objects are changed.
+
+        Args:
+            notice: The notice object containing information about the changes.
+            stage: The stage of the change.
+
+        Returns:
+            None
+        """
         updated_objects = []
         for p in notice.GetChangedInfoOnlyPaths():
             if p.IsPropertyPath() and p.GetParentPath() == self._selected_prim.GetPath():
@@ -216,6 +306,15 @@ class OmniIotSamplePanelExtension(omni.ext.IExt):
     # ===================== stage events END =======================
 
     def _on_layers_event(self, event):
+        """
+        Handle the layers event.
+
+        Args:
+            event: The event object.
+
+        Returns:
+            None
+        """
         payload = layers.get_layer_event_payload(event)
         if not payload:
             return
@@ -227,6 +326,21 @@ class OmniIotSamplePanelExtension(omni.ext.IExt):
         self._update_ui()
 
     def _update_ui(self):
+        """
+        Updates the user interface based on the current state of the live session.
+
+        If the live session is active, it creates a window and sets up various UI elements
+        to display IoT data. It also registers event listeners for stage updates and changes
+        to the IoT data.
+
+        If the live session is not active, it cleans up the UI elements and event listeners.
+
+        Note: This method assumes that the `_live_syncing` and `_stage` attributes are already
+        initialized.
+
+        Returns:
+            None
+        """
         if self._live_syncing.is_stage_in_live_session():
             print("[omni.iot.sample.panel] joining live session")
             if self._iot_prim is None:
