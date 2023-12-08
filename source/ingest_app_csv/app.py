@@ -50,6 +50,16 @@ def log_handler(thread, component, level, message):
 
 
 def initialize_device_prim(live_layer, iot_topic):
+    """
+    Initializes the IoT root and spec for the given iot_topic, and creates all the IoT attributes that will be written.
+
+    Args:
+        live_layer (Sdf.Layer): The layer to create the IoT root and spec in.
+        iot_topic (str): The name of the IoT topic.
+
+    Raises:
+        Exception: If the IoT spec could not be created or if an attribute could not be defined.
+    """
     iot_root = live_layer.GetPrimAtPath("/iot")
     if not iot_root:
         iot_root = Sdf.PrimSpec(live_layer, "iot", Sdf.SpecifierDef, "IoT Root")
@@ -64,7 +74,7 @@ def initialize_device_prim(live_layer, iot_topic):
     for attrib in iot_spec.attributes:
         iot_spec.RemoveProperty(attrib)
 
-    IOT_TOPIC_DATA = f"{CONTENT_DIR}/{iot_topic}_iot_data.csv"
+    IOT_TOPIC_DATA = os.path.join(CONTENT_DIR, f"{iot_topic}_iot_data.csv")
     data = pd.read_csv(IOT_TOPIC_DATA)
     data.head()
 
@@ -83,6 +93,26 @@ def initialize_device_prim(live_layer, iot_topic):
 
 
 async def initialize_async(iot_topic):
+    """
+    Initializes the USD stage for the given IoT topic by:
+
+    * copying the Conveyor Belt USD file to the target nucleus server,
+    * opening the stage,
+    * creating a live layer if one does not already exist,
+    * adding the live layer as a sublayer to the root layer,
+    * setting the live layer as the edit target,
+    * initializing the device prim, and
+    * running the live process.
+
+    Args:
+        iot_topic (str): The IoT topic to initialize the USD stage for.
+
+    Returns:
+        Tuple[Usd.Stage, Sdf.Layer]: A tuple containing the initialized USD stage and the live layer.
+    """
+
+    await check_connection()
+
     # copy a the Conveyor Belt to the target nucleus server
     stage_name = f"ConveyorBelt_{iot_topic}"
     local_folder = f"file:{CONTENT_DIR}/{stage_name}"
@@ -118,7 +148,21 @@ async def initialize_async(iot_topic):
 
 
 def write_to_live(live_layer, iot_topic, group, ts):
-    # write the iot values to the usd prim attributes
+    """
+    Write the IoT values to the USD prim attributes.
+
+    Args:
+        live_layer (pxr.Usd.Stage): The USD stage to write to.
+        iot_topic (str): The name of the IoT topic.
+        group (pandas.DataFrame): The group of IoT values to write.
+        ts (float): The timestamp of the IoT values.
+
+    Raises:
+        Exception: If the attribute for an IoT value is not found.
+
+    Returns:
+        None
+    """
     print(group.iloc[0]["TimeStamp"])
     ts_attribute = live_layer.GetAttributeAtPath(f"/iot/{iot_topic}._ts")
     ts_attribute.default = ts
@@ -134,8 +178,16 @@ def write_to_live(live_layer, iot_topic, group, ts):
 
 
 def run(stage, live_layer, iot_topic):
-    # we assume that the file contains the data for single device
-    IOT_TOPIC_DATA = f"{CONTENT_DIR}/{iot_topic}_iot_data.csv"
+    """
+    Plays back data from a CSV file in real-time, writing it to a live layer.
+
+    Args:
+        stage (str): The stage of the application.
+        live_layer (str): The name of the live layer to write data to.
+        iot_topic (str): The name of the IoT topic to read data from.
+    """
+    IOT_TOPIC_DATA = os.path.join(CONTENT_DIR, f"{iot_topic}_iot_data.csv")
+    print(f"IoT Data file is: {IOT_TOPIC_DATA}")
     data = pd.read_csv(IOT_TOPIC_DATA)
     data.head()
 
@@ -156,10 +208,25 @@ def run(stage, live_layer, iot_topic):
         write_to_live(live_layer, iot_topic, group, (next_time - start_time).total_seconds())
         last_time = next_time
 
+async def check_connection():
+    server_url = f'omniverse://{OMNI_HOST}'
+    print(f'Checking host URL = {server_url}')
+    status, response = omni.client.stat(server_url)
+    if status is not omni.client.Result.OK:
+        print(f"Failed to connect to {server_url}.")
+        # exit(1)
+    else:
+        print(f"Successfully connected to {server_url}.")
+
 
 if __name__ == "__main__":
     IOT_TOPIC = "A08_PR_NVD_01"
-    omni.client.initialize()
+
+    result = omni.client.initialize()
+    if not result:
+        print("Failed to initialize the client library.")
+        exit(1)
+
     omni.client.set_log_level(omni.client.LogLevel.DEBUG)
     omni.client.set_log_callback(log_handler)
     try:

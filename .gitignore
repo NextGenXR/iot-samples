@@ -22,5 +22,5 @@ PACKAGE-DEPS.yaml
 *.env
 *.code-workspace
 csv.bat
-geom.bat
 mqtt.bat
+geom.bat

@@ -2,6 +2,8 @@
 
 # [Table of Contents](#tableofcontents)
 
+- [IoT Samples (Beta)](#iot-samples-beta)
+- [Table of Contents](#table-of-contents)
 - [Overview](#overview)
 - [Architecture](#architecture)
 - [Prerequisites](#prerequisites)
@@ -10,14 +12,11 @@
 - [Headless Connector](#headless-connector)
     - [CSV Ingest Application](#csv-ingest-application)
     - [MQTT Ingest Application](#mqtt-ingest-application)
-    - [Containerize Headless Connector](#containerize-headless-connector)
+    - [Containerize headless connector](#containerize-headless-connector)
 - [Consuming IoT data in USD](#consuming-iot-data-in-usd)
     - [Using an Extension](#using-an-extension)
-    - [Using Action Graph](#using-actiongraph)
-    - [Direct to USD from headless connector](#direct-to-usd-from-headless-connector)
-- [Joining a Live Session](#joining-a-live-session)
-- [API Key Authentication](#api-key-authentication)
-- [Using Environment Variables](#using-environment-variables)
+    - [Using ActionGraph](#using-actiongraph)
+    - [Direct to USD from Headless Connector](#direct-to-usd-from-headless-connector)
 
 # Overview
 
@@ -131,7 +130,7 @@ Linux
 
 # Headless Connector
 
-Headless connectos are stand-alone applications that implements a bidirectional bridge between customer domain and USD related data. The logic implemented by a connector is use-case dependent and can be simple or complex.
+Headless connectors are stand-alone applications that implements a bidirectional bridge between customer domain and USD related data. The logic implemented by a connector is use-case dependent and can be simple or complex.
 
 There are two sample connector applications - [CSV Ingest Application](#csv-ingest-application) and [MQTT Ingest Application](#mqtt-ingest-application) - that transits the data as is from source to destination, whereas the [Geometry Transformation Application](#direct-to-usd-from-headless-connector) manipulates USD geometry directly in the connector. Depending on the use cases, a connector can run as a headless application locally, on-prem, at the edge, or in the cloud.
 
@@ -260,7 +259,7 @@ The following is a simple example of how to deploy a headless connector applicat
 - WSL (comes standard with Docker Desktop installation) and
 - Ubuntu Linux as the default OS.
 
-The ollowing has to be done in **WSL environment** and *NOT* in Windows environment. Make sure you are in WSL, else you may encounter build and dependency errors.
+The following has to be done in **WSL environment** and *NOT* in Windows environment. Make sure you are in WSL, else you may encounter build and dependency errors.
 
 - If you have an earlier version of the repo cloned, you may want to delete the old repo in WSL and start with a new cloned repo in WSL. Else you could end up with file mismatches and related errors.
 
