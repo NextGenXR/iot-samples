@@ -49,37 +49,37 @@ class uiButtonStyles:
 
 class LiveCube:
     def __init__(self, stage: Usd.Stage, path: str):
-            """
-            Initializes an instance of the Extension class.
+        """
+        Initializes an instance of the Extension class.
 
-            Args:
-                stage (Usd.Stage): The USD stage.
-                path (str): The path to the prim in the USD stage.
-            """
-            self._prim = stage.GetPrimAtPath(path)
-            self._op = self._prim.HasProperty(TRANSLATE_OFFSET)
-            if self._prim:
-                self._xform = UsdGeom.Xformable(self._prim)
+        Args:
+            stage (Usd.Stage): The USD stage.
+            path (str): The path to the prim in the USD stage.
+        """
+        self._prim = stage.GetPrimAtPath(path)
+        self._op = self._prim.HasProperty(TRANSLATE_OFFSET)
+        if self._prim:
+            self._xform = UsdGeom.Xformable(self._prim)
 
     def resume(self):
-            """
-            Resumes the operation of the panel.
+        """
+        Resumes the operation of the panel.
 
-            If the panel has a transform and is not currently in operation,
-            this method adds a translate operation to the transform and sets
-            the time and value parameters for the operation.
+        If the panel has a transform and is not currently in operation,
+        this method adds a translate operation to the transform and sets
+        the time and value parameters for the operation.
 
-            Parameters:
-                None
+        Parameters:
+            None
 
-            Returns:
-                None
-            """
-            if self._xform and not self._op:
-                op = self._xform.AddTranslateOp(opSuffix="offset")
-                op.Set(time=1, value=(0, -20.0, 0))
-                op.Set(time=192, value=(0, -440, 0))
-                self._op = True
+        Returns:
+            None
+        """
+        if self._xform and not self._op:
+            op = self._xform.AddTranslateOp(opSuffix="offset")
+            op.Set(time=1, value=(0, -20.0, 0))
+            op.Set(time=192, value=(0, -440, 0))
+            self._op = True
 
     def pause(self):
         """
@@ -191,26 +191,26 @@ class OmniIotSamplePanelExtension(omni.ext.IExt):
         print("[omni.iot.sample.panel] shutdown")
 
     def _on_velocity_changed(self, speed):
-            """
-            Callback function triggered when the velocity is changed.
+        """
+        Callback function triggered when the velocity is changed.
 
-            Args:
-                speed (float): The new velocity value.
+        Args:
+            speed (float): The new velocity value.
 
-            Returns:
-                None
-            """
-            print(f"[omni.iot.sample.panel] _on_velocity_changed: {speed}")
-            if speed is not None and speed > 0.0:
-                with Sdf.ChangeBlock():
-                    self._cube.resume()
-                    for roller in self._rollers:
-                        roller.resume()
-            else:
-                with Sdf.ChangeBlock():
-                    self._cube.pause()
-                    for roller in self._rollers:
-                        roller.pause()
+        Returns:
+            None
+        """
+        print(f"[omni.iot.sample.panel] _on_velocity_changed: {speed}")
+        if speed is not None and speed > 0.0:
+            with Sdf.ChangeBlock():
+                self._cube.resume()
+                for roller in self._rollers:
+                    roller.resume()
+        else:
+            with Sdf.ChangeBlock():
+                self._cube.pause()
+                for roller in self._rollers:
+                    roller.pause()
 
     def _update_frame(self):
         """
@@ -350,10 +350,12 @@ class OmniIotSamplePanelExtension(omni.ext.IExt):
                 sessionLayer = self._stage.GetSessionLayer()
                 sessionLayer.startTimeCode = 1
                 sessionLayer.endTimeCode = 192
+                # Add the Cube to the session layer
                 self._iot_prim = self._stage.GetPrimAtPath("/iot")
                 self._cube = LiveCube(self._stage, "/World/cube")
                 self._rollers = []
 
+                # Add all roller objects to _rollers list
                 for x in range(38):
                     self._rollers.append(
                         LiveRoller(self._stage, f"/World/Geometry/SM_ConveyorBelt_A08_Roller{x+1:02d}_01")
